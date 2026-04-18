@@ -1,0 +1,86 @@
+/* Sidebar background - Black / Very Dark Grey */
+.main-sidebar, .elevation-4 {
+    background-color: #1a1a1a !important;
+}
+
+/* Sidebar links */
+.sidebar a {
+    color: #e0e0e0 !important;
+}
+
+.nav-sidebar .nav-item>.nav-link.active {
+    background-color: #D6A4A4 !important; /* Rosa viejo */
+    color: #fff !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,.12),0 1px 2px rgba(0,0,0,.24) !important;
+}
+
+/* Navbar - White with rose border */
+.main-header {
+    background-color: #ffffff !important;
+    border-bottom: 3px solid #D6A4A4 !important;
+}
+.main-header .nav-link {
+    color: #1a1a1a !important;
+}
+
+/* Brand logo area */
+.brand-link {
+    background-color: #1a1a1a !important;
+    border-bottom: 1px solid #333 !important;
+}
+
+/* Buttons (primary actions) */
+.btn-primary, .btn-info, .object-tools a {
+    background-color: #D6A4A4 !important;
+    border-color: #C08A8A !important;
+    color: #fff !important;
+}
+.btn-primary:hover, .btn-info:hover, .object-tools a:hover {
+    background-color: #C08A8A !important;
+    border-color: #A3726D !important;
+}
+
+/* Default links */
+a {
+    color: #B27C7C;
+}
+a:hover {
+    color: #1a1a1a;
+}
+
+/* Body and content wrapper (Grey/White) */
+.content-wrapper {
+    background-color: #f9f9f9 !important;
+}
+
+/* Tables / Data / Cards */
+.card {
+    border-top: 3px solid #D6A4A4 !important;
+}
+
+table thead th {
+    background-color: #F5E6E6 !important; /* Rosa viejo super claro */
+    color: #1a1a1a !important;
+    border-bottom: 2px solid #D6A4A4 !important;
+}
+
+/* Login box */
+.login-card-body, .register-card-body {
+    border-top: 5px solid #D6A4A4 !important;
+}
+
+/* Redondear y achicar logo en Admin */
+.brand-link .brand-image, .login-logo img {
+    border-radius: 50% !important;
+    width: 35px !important;
+    height: 35px !important;
+    object-cover: cover !important;
+    border: 1px solid #D6A4A4 !important;
+    max-height: none !important;
+}
+
+.login-logo img {
+    width: 80px !important;
+    height: 80px !important;
+    margin-bottom: 10px;
+}

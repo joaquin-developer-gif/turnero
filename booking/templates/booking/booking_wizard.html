@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reserva de Turno</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              dustyrose: '#D6A4A4',
+              dustyrosedark: '#B27C7C',
+              dustyroselight: '#F5E6E6'
+            }
+          }
+        }
+      }
+    </script>
+    <!-- HTMX para peticiones dinámicas -->
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <!-- Alpine.js para interactividad simple -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .glass { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen relative overflow-x-hidden pt-10 pb-20 text-gray-800">
+    <!-- Fondo decorativo suave (Gris y Rosa viejo muy difuminado) -->
+    <div class="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-gray-200 rounded-full blur-3xl opacity-50 -z-10"></div>
+    <div class="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-dustyroselight rounded-full blur-3xl opacity-70 -z-10"></div>
+
+    <div class="max-w-md mx-auto px-4" x-data="{ 
+        step: 1, 
+        selectedDate: '{{ appointment.date|date:"Y-m-d"|default:"" }}', 
+        selectedTime: '{{ appointment.time|time:"H:i"|default:"" }}',
+        clientName: '{{ appointment.client_name|default:"" }}', 
+        clientLastName: '{{ appointment.client_last_name|default:"" }}', 
+        phone: '{{ appointment.phone|default:"" }}',
+        isReprogramming: {% if appointment %}true{% else %}false{% endif %},
+        
+        selectDate(date) { 
+            this.selectedDate = date; 
+            this.selectedTime = ''; // Resetear tiempo
+            htmx.ajax('GET', '/api/times/' + date + '/', '#time-slots-container');
+            this.step = 2; // Ir al siguiente paso lógico
+        },
+        selectTime(time) {
+            this.selectedTime = time;
+            this.step = 3;
+        }
+    }" x-init="if (isReprogramming) { htmx.ajax('GET', '/api/times/' + selectedDate + '/', '#time-slots-container'); }">
+
+        <!-- Cabecera -->
+        <header class="text-center mb-10">
+            <div class="flex justify-center mb-4">
+                <img src="/static/images/logo.png" alt="Logo Turnero" class="h-16 w-16 object-cover rounded-full border-2 border-dustyrose shadow-sm">
+            </div>
+            <h1 class="text-3xl font-bold text-black mb-2" x-text="isReprogramming ? 'Reprogramar Turno' : 'Reserva tu Turno'"></h1>
+            <p class="text-gray-500" x-text="isReprogramming ? 'Estás modificando tu reserva actual.' : 'Selecciona el día y horario de tu preferencia.'"></p>
+        </header>
+
+        <!-- Formulario principal via POST -->
+        <form action="{% if appointment %}{% url 'reprogram_appointment' appointment.token %}{% else %}{% url 'booking_wizard' %}{% endif %}" method="POST" class="glass shadow-2xl rounded-2xl p-6 border border-gray-100 relative">
+            {% csrf_token %}
+            
+            <input type="hidden" name="date" x-model="selectedDate">
+            <input type="hidden" name="time" x-model="selectedTime">
+
+            <!-- Progress Bar -->
+            <div class="flex justify-between mb-8 relative">
+                <div class="absolute left-0 top-1/2 w-full h-[3px] bg-gray-200 -z-10 -translate-y-1/2 rounded-full"></div>
+                <!-- Barra de progreso negra -->
+                <div class="absolute left-0 top-1/2 h-[3px] bg-black -z-10 -translate-y-1/2 rounded-full transition-all duration-300" :style="'width: ' + ((step-1)*50) + '%'"></div>
+                
+                <div :class="{'bg-black text-white border-black': step >= 1, 'bg-white text-gray-400 border-gray-200': step < 1}" class="w-8 h-8 rounded-full border-2 flex items-center justify-center font-bold text-sm shadow-sm transition-colors">1</div>
+                <div :class="{'bg-black text-white border-black': step >= 2, 'bg-white text-gray-400 border-gray-200': step < 2}" class="w-8 h-8 rounded-full border-2 flex items-center justify-center font-bold text-sm shadow-sm transition-colors">2</div>
+                <div :class="{'bg-black text-white border-black': step >= 3, 'bg-white text-gray-400 border-gray-200': step < 3}" class="w-8 h-8 rounded-full border-2 flex items-center justify-center font-bold text-sm shadow-sm transition-colors">3</div>
+            </div>
+
+            <!-- PASO 1: Fecha -->
+            <div x-show="step === 1" x-transition.opacity.duration.300ms>
+                <h2 class="text-lg font-semibold text-black mb-4">1. Elige un día</h2>
+                <div class="grid grid-cols-3 gap-3 overflow-y-auto max-h-[300px] p-1">
+                    {% for day in days %}
+                    <button type="button" 
+                        @click="selectDate('{{ day|date:'Y-m-d' }}')"
+                        class="flex flex-col items-center justify-center p-3 rounded-xl border border-gray-200 transition-all hover:border-dustyrose hover:bg-dustyroselight hover:shadow-md focus:outline-none"
+                        :class="{'border-dustyrose bg-dustyroselight ring-2 ring-dustyroselight': selectedDate === '{{ day|date:'Y-m-d' }}'}">
+                        <span class="text-xs font-semibold text-gray-500 uppercase">{{ day|date:"l"|slice:":3" }}</span>
+                        <span class="text-xl font-bold text-black my-1">{{ day|date:"d" }}</span>
+                        <span class="text-xs text-gray-500">{{ day|date:"M" }}</span>
+                    </button>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- PASO 2: Horario -->
+            <div x-show="step === 2" x-transition.opacity.duration.300ms style="display: none;">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-semibold text-black">2. Elige un horario</h2>
+                    <button type="button" @click="step = 1" class="text-sm text-dustyrosedark hover:text-black font-medium tracking-tight transition-colors">Cambiar fecha</button>
+                </div>
+                
+                <!-- Skeleton Loader de HTMX / Contenedor destino -->
+                <div id="time-slots-container" class="min-h-[200px]">
+                    <div class="flex items-center justify-center h-full text-gray-400 py-10">
+                        <!-- Loading spinner -->
+                        <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-gray-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Cargando horarios...
+                    </div>
+                </div>
+            </div>
+
+            <!-- PASO 3: Datos Personales -->
+            <div x-show="step === 3" x-transition.opacity.duration.300ms style="display: none;">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-semibold text-black">3. Tus datos</h2>
+                    <button type="button" @click="step = 2" class="text-sm text-dustyrosedark hover:text-black font-medium tracking-tight transition-colors">Cambiar horario</button>
+                </div>
+
+                <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6 flex items-start">
+                    <span class="text-2xl mr-3 opacity-80">📅</span>
+                    <div>
+                        <p class="text-sm text-gray-500">Turno seleccionado para el</p>
+                        <p class="font-bold text-black" x-text="selectedDate + ' a las ' + selectedTime + ' hs'"></p>
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-1">Nombre</label>
+                        <input type="text" name="client_name" required x-model="clientName" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-dustyrose focus:border-dustyrose outline-none transition-all bg-white text-black">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-1">Apellido</label>
+                        <input type="text" name="client_last_name" required x-model="clientLastName" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-dustyrose focus:border-dustyrose outline-none transition-all bg-white text-black">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-1">Celular / WhatsApp</label>
+                        <input type="tel" name="phone" required x-model="phone" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-dustyrose focus:border-dustyrose outline-none transition-all bg-white text-black" placeholder="Ej: 11 5555 4444">
+                    </div>
+                </div>
+
+                <button type="submit" class="w-full mt-8 bg-black hover:bg-gray-800 text-white font-bold py-4 px-4 rounded-xl shadow-lg transition-all transform hover:scale-[1.02] active:scale-95 flex justify-center items-center">
+                    <span x-text="isReprogramming ? 'Confirmar Nueva Fecha' : 'Confirmar Reserva'"></span>
+                    <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                </button>
+            </div>
+            
+        </form>
+    </div>
+</body>
+</html>

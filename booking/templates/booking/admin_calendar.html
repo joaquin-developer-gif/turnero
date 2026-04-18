@@ -1,0 +1,48 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block extrahead %}
+    <link href='https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.min.css' rel='stylesheet' />
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.min.js'></script>
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/locales/es.js'></script>
+    <style>
+        #calendar {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            margin-top: 20px;
+            min-height: 600px;
+        }
+        .fc-toolbar-title { font-weight: bold; color: #1a1a1a; }
+        .fc-button-primary { background-color: #D6A4A4 !important; border-color: #D6A4A4 !important; }
+        .fc-event { cursor: pointer; border-radius: 4px; padding: 2px 4px; }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div id="calendar"></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var calendarEl = document.getElementById('calendar');
+            var calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'dayGridMonth',
+                locale: 'es',
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'dayGridMonth,timeGridWeek,timeGridDay'
+                },
+                events: '{% url "admin_calendar_events" %}',
+                eventClick: function(info) {
+                    if (info.event.url) {
+                        window.open(info.event.url, "_self");
+                        info.jsEvent.preventDefault();
+                    }
+                }
+            });
+            calendar.render();
+        });
+    </script>
+{% endblock %}

@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestionar mi Turno</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              dustyrose: '#D6A4A4',
+              dustyrosedark: '#B27C7C',
+              dustyroselight: '#F5E6E6'
+            }
+          }
+        }
+      }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen pt-10 pb-20 px-4">
+    <div class="max-w-md mx-auto">
+        <header class="text-center mb-8">
+            <h1 class="text-2xl font-bold text-black">Gestionar mi Turno</h1>
+            <p class="text-gray-500 text-sm">Aquí puedes ver el estado o modificar tu reserva.</p>
+        </header>
+
+        <div class="bg-white shadow-xl rounded-2xl p-6 border border-gray-100 mb-6">
+            <div class="flex items-center justify-between mb-6">
+                <span class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider
+                    {% if appointment.status == 'pending' or appointment.status == 'confirmed' %}bg-green-100 text-green-700{% elif appointment.status == 'cancelled' %}bg-red-100 text-red-700{% else %}bg-gray-100 text-gray-700{% endif %}">
+                    {{ appointment.get_status_display }}
+                </span>
+                <span class="text-gray-400 text-xs text-right">ID: #{{ appointment.token|stringformat:".8s" }}</span>
+            </div>
+
+            <div class="space-y-4 mb-8">
+                <div class="flex items-center space-x-4">
+                    <div class="w-12 h-12 bg-rose-50 rounded-xl flex items-center justify-center text-2xl">📅</div>
+                    <div>
+                        <p class="text-xs text-gray-500 uppercase tracking-tight font-semibold">Fecha y Hora</p>
+                        <p class="font-bold text-gray-900">{{ appointment.date|date:"l d \d\e F" }} - {{ appointment.time|time:"H:i" }} hs</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center space-x-4">
+                    <div class="w-12 h-12 bg-gray-50 rounded-xl flex items-center justify-center text-2xl">👤</div>
+                    <div>
+                        <p class="text-xs text-gray-500 uppercase tracking-tight font-semibold">Cliente</p>
+                        <p class="font-bold text-gray-900">{{ appointment.client_name }} {{ appointment.client_last_name }}</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center space-x-4">
+                    <div class="w-12 h-12 bg-gray-50 rounded-xl flex items-center justify-center text-2xl">📱</div>
+                    <div>
+                        <p class="text-xs text-gray-500 uppercase tracking-tight font-semibold">Contacto</p>
+                        <p class="font-bold text-gray-900">{{ appointment.phone }}</p>
+                    </div>
+                </div>
+            </div>
+
+            {% if appointment.status != 'cancelled' %}
+            <div class="grid grid-cols-1 gap-3">
+                <a href="{% url 'reprogram_appointment' appointment.token %}" class="w-full bg-black text-white text-center font-bold py-3 rounded-xl hover:bg-gray-800 transition-all flex items-center justify-center">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                    Reprogramar Turno
+                </a>
+                
+                {% if can_cancel %}
+                <button @click="confirmCancel = true" class="w-full bg-white border border-gray-200 text-red-600 font-bold py-3 rounded-xl hover:bg-red-50 hover:border-red-100 transition-all" x-data="{ confirmCancel: false }">
+                    <span x-show="!confirmCancel">Cancelar Turno</span>
+                    <div x-show="confirmCancel" class="flex flex-col space-y-2 p-2" style="display: none;">
+                        <p class="text-xs mb-2">¿Estás seguro que quieres cancelar?</p>
+                        <div class="flex space-x-2">
+                            <a href="{% url 'cancel_appointment' appointment.token %}" class="flex-1 bg-red-600 text-white rounded-lg py-1 text-sm">Sí, cancelar</a>
+                            <button type="button" @click.stop="confirmCancel = false" class="flex-1 bg-gray-200 text-gray-800 rounded-lg py-1 text-sm">No</button>
+                        </div>
+                    </div>
+                </button>
+                {% else %}
+                <div class="bg-gray-50 rounded-xl p-3 text-center border border-dashed border-gray-200">
+                    <p class="text-xs text-gray-400">Cancelación no disponible (límite de {{ config.cancellation_limit_hours }}hs)</p>
+                </div>
+                {% endif %}
+            </div>
+            {% else %}
+            <div class="text-center p-4 bg-red-50 rounded-xl">
+                <p class="text-red-800 font-bold">Este turno ha sido cancelado.</p>
+                <a href="{% url 'booking_wizard' %}" class="mt-4 inline-block text-indigo-600 font-bold text-sm underline">Reservar uno nuevo</a>
+            </div>
+            {% endif %}
+        </div>
+
+        <p class="text-center text-xs text-gray-400">Guarda este enlace para gestionar tu turno en el futuro.</p>
+    </div>
+
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</body>
+</html>
